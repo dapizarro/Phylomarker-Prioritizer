@@ -1,0 +1,11 @@
+>Cladonia_metacorallifera
+>Endocarpon_pusillum
+>Evernia_prunastri
+>Graphis_scripta
+>Gyalolechia_flavorubescens
+>Lasallia_hispanica
+>Lasallia_pustulata
+>Parmelina_carporhizans
+>Pseudevernia_furfuracea
+>Rhizoplaca_melanophthalma
+>Umbilicaria_muehlenbergii

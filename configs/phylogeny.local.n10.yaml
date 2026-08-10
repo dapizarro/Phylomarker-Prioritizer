@@ -1,0 +1,86 @@
+# Etapa 2 — validación filogenética local de los paneles de 10 genes.
+# Equivale al antiguo phylogeny.local.10genes.yaml.
+#
+# `selection_results` debe apuntar al directorio de salida de la etapa 1
+# (el mismo valor que `inputs.output` en configs/select.dikarya.yaml).
+#
+# El directorio `output` contiene una corrida parcial: pasos 1-8 completos,
+# jackknife interrumpido en 31/120 réplicas. `local-run` es reanudable y
+# omitirá lo ya terminado.
+
+inputs:
+  selection_results: /home/pizarro/Documentos/PROJECT_2026/Phylomarker_prioritizer/phylomarker-select/results_dicarya_trimmed_v4
+  metadata: /home/pizarro/git/Phylomarker-Prioritizer/data/samples.tsv
+  sample_id_column: sample_ID
+  sequence_type: protein
+  panel_size: 10
+  profiles:
+    - deep_robust
+    - core_complete
+    - diverse_rate
+    - information_only
+    - occupancy_only
+    - random_matched
+  output: /home/pizarro/Documentos/PROJECT_2026/Phylomarker_prioritizer/phylomarker_phylogeny_v0.3/phylogenetic_results_local_n10
+
+prepare:
+  copy_alignments: false
+
+iqtree:
+  executable: iqtree2
+  seed: 20260803
+
+  gene_model: MFP
+  gene_bootstrap: 0
+  gene_alrt: 0
+  threads_per_gene: 2
+  gene_extra: []
+
+  concat_partition_strategy: gene_models
+  concat_fixed_model: LG+G
+  missing_model_policy: error
+  fallback_model: LG+G
+
+  concat_bootstrap: 0
+  concat_alrt: 0
+  threads_concat: 2
+  concat_extra: []
+
+  scf_quartets: 100
+  threads_concordance: 2
+
+astral:
+  java: java
+  jar: /home/pizarro/Tools/astral/Astral/astral.5.7.3.jar
+  extra: []
+
+# MFP+MERGE repite la selección y fusión de modelos en cada réplica y es el
+# cuello de botella en portátil. Para una prueba local rápida: model: LG+G y
+# replicates: 5. Reserva MFP+MERGE con 20 réplicas para el cluster.
+jackknife:
+  replicates: 20
+  keep_fraction: 0.80
+  seed: 20260803
+  model: MFP+MERGE
+  threads: 2
+  extra: []
+
+slurm:
+  partition: compute
+  modules: []
+  conda_activate: ""
+  gene_tree_cpus: 2
+  gene_tree_mem: 4G
+  gene_tree_time: "08:00:00"
+  concat_cpus: 2
+  concat_mem: 8G
+  concat_time: "08:00:00"
+  astral_cpus: 1
+  astral_mem: 4G
+  astral_time: "02:00:00"
+  concordance_cpus: 2
+  concordance_mem: 8G
+  concordance_time: "08:00:00"
+  jackknife_cpus: 2
+  jackknife_mem: 8G
+  jackknife_time: "08:00:00"

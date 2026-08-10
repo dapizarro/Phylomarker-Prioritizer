@@ -1,0 +1,5 @@
+sample_ID	species	genus	family	order	class	subphylum	assembly_quality	busco_version	busco_lineage	predictor
+Cladonia_grayi	Cladonia grayi	Cladonia	Cladoniaceae	Lecanorales	Lecanoromycetes	Pezizomycotina	high	3.0.2	dikarya_odb9	augustus
+Cladonia_macilenta	Cladonia macilenta	Cladonia	Cladoniaceae	Lecanorales	Lecanoromycetes	Pezizomycotina	high	3.0.2	dikarya_odb9	augustus
+Endocarpon_pusillum	Endocarpon pusillum	Endocarpon	Verrucariaceae	Verrucariales	Eurotiomycetes	Pezizomycotina	high	3.0.2	dikarya_odb9	augustus
+Xanthoria_parietina	Xanthoria parietina	Xanthoria	Teloschistaceae	Teloschistales	Lecanoromycetes	Pezizomycotina	high	3.0.2	dikarya_odb9	augustus

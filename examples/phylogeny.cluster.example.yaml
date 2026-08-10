@@ -1,0 +1,72 @@
+inputs:
+  selection_results: /ABSOLUTE/PATH/results_dicarya_trimmed_v4
+  metadata: /ABSOLUTE/PATH/samples.tsv
+  sample_id_column: sample_ID
+  sequence_type: protein
+  panel_size: 10
+  profiles:
+    - deep_robust
+    - core_complete
+    - diverse_rate
+    - information_only
+    - occupancy_only
+    - random_matched
+  output: /ABSOLUTE/PATH/phylogenetic_results
+
+prepare:
+  copy_alignments: false
+
+iqtree:
+  executable: iqtree3
+  seed: 20260803
+  gene_model: MFP
+  gene_bootstrap: 1000
+  gene_alrt: 1000
+  threads_per_gene: 2
+  gene_extra: ["-bnni"]
+  concat_partition_strategy: gene_models
+  # Alternatives: model_finder_merge, fixed
+  concat_fixed_model: LG+G
+  missing_model_policy: error
+  fallback_model: LG+G
+  concat_bootstrap: 1000
+  concat_alrt: 1000
+  threads_concat: AUTO
+  concat_extra: ["-bnni"]
+  scf_quartets: 100
+  threads_concordance: AUTO
+
+astral:
+  java: java
+  jar: /ABSOLUTE/PATH/astral.5.7.8.jar
+  extra: []
+
+jackknife:
+  replicates: 50
+  keep_fraction: 0.80
+  seed: 20260803
+  model: MFP+MERGE
+  threads: 4
+  extra: []
+
+slurm:
+  partition: compute
+  modules:
+    - iqtree
+    - java
+  conda_activate: /ABSOLUTE/PATH/miniconda3/bin/activate phylomarker-phylogeny
+  gene_tree_cpus: 2
+  gene_tree_mem: 4G
+  gene_tree_time: "08:00:00"
+  concat_cpus: 8
+  concat_mem: 16G
+  concat_time: "24:00:00"
+  astral_cpus: 2
+  astral_mem: 8G
+  astral_time: "08:00:00"
+  concordance_cpus: 4
+  concordance_mem: 8G
+  concordance_time: "08:00:00"
+  jackknife_cpus: 4
+  jackknife_mem: 8G
+  jackknife_time: "12:00:00"

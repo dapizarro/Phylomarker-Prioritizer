@@ -1,0 +1,18 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+build/
+dist/
+*.egg-info/
+.DS_Store
+
+# Datos pesados y resultados de ejecución: viven fuera del repositorio.
+# Ver data/README.md
+data/busco/
+results/
+results_*/
+phylogenetic_results*/
+work/

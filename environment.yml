@@ -1,0 +1,22 @@
+name: phylomarker
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python>=3.10
+  # etapa 1 — selección
+  - numpy>=1.24
+  - pandas>=2
+  - pyyaml>=6
+  - scikit-learn>=1.3
+  - mafft
+  - trimal
+  # etapa 2 — validación filogenética
+  - dendropy
+  - iqtree
+  - openjdk
+  # desarrollo
+  - pytest
+  - pip
+  - pip:
+      - -e .

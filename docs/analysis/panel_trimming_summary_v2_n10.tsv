@@ -1,0 +1,9 @@
+profile	n_genes	stable	signal_preserved	signal_sensitive	extreme	median_trimming_score
+backbone_balanced	10	6	4	0	0	1.0
+core_complete	10	7	3	0	0	1.0
+deep_robust	10	8	2	0	0	1.0
+diverse_rate	10	6	4	0	0	1.0
+information_only	10	4	3	2	1	0.9587996559694674
+low_bias	10	6	4	0	0	1.0
+occupancy_only	10	6	4	0	0	1.0
+random_matched	10	7	2	0	1	1.0

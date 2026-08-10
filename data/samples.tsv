@@ -1,0 +1,15 @@
+sample_ID	species	genus	family	order	class	subphylum	assembly_quality	busco_version	busco_lineage	predictor
+Cladonia_grayi	Cladonia grayi	Cladonia	Cladoniaceae	Lecanorales	Lecanoromycetes	Pezizomycotina	high	3.0.2	dikarya_odb9	augustus
+Cladonia_macilenta	Cladonia macilenta	Cladonia	Cladoniaceae	Lecanorales	Lecanoromycetes	Pezizomycotina	high	3.0.2	dikarya_odb9	augustus
+Cladonia_metacorallifera	Cladonia metacorallifera	Cladonia	Cladoniaceae	Lecanorales	Lecanoromycetes	Pezizomycotina	high	3.0.2	dikarya_odb9	augustus
+Endocarpon_pusillum	Endocarpon pusillum	Endocarpon	Verrucariaceae	Verrucariales	Eurotiomycetes	Pezizomycotina	high	3.0.2	dikarya_odb9	augustus
+Evernia_prunastri	Evernia prunastri	Evernia	Parmeliaceae	Lecanorales	Lecanoromycetes	Pezizomycotina	high	3.0.2	dikarya_odb9	augustus
+Graphis_scripta	Graphis scripta	Graphis	Graphidaceae	Ostropales	Lecanoromycetes	Pezizomycotina	medium	3.0.2	dikarya_odb9	augustus
+Gyalolechia_flavorubescens	Gyalolechia flavorubescens	Gyalolechia	Teloschistaceae	Teloschistales	Lecanoromycetes	Pezizomycotina	high	3.0.2	dikarya_odb9	augustus
+Lasallia_hispanica	Lasallia hispanica	Lasallia	Umbilicariaceae	Umbilicariales	Lecanoromycetes	Pezizomycotina	high	3.0.2	dikarya_odb9	augustus
+Lasallia_pustulata	Lasallia pustulata	Lasallia	Umbilicariaceae	Umbilicariales	Lecanoromycetes	Pezizomycotina	high	3.0.2	dikarya_odb9	augustus
+Parmelina_carporhizans	Parmelina carporrhizans	Parmelina	Parmeliaceae	Lecanorales	Lecanoromycetes	Pezizomycotina	medium	3.0.2	dikarya_odb9	augustus
+Pseudevernia_furfuracea	Pseudevernia furfuracea	Pseudevernia	Parmeliaceae	Lecanorales	Lecanoromycetes	Pezizomycotina	high	3.0.2	dikarya_odb9	augustus
+Rhizoplaca_melanophthalma	Rhizoplaca melanophthalma	Rhizoplaca	Lecanoraceae	Lecanorales	Lecanoromycetes	Pezizomycotina	high	3.0.2	dikarya_odb9	augustus
+Umbilicaria_muehlenbergii	Umbilicaria muehlenbergii	Umbilicaria	Umbilicariaceae	Umbilicariales	Lecanoromycetes	Pezizomycotina	high	3.0.2	dikarya_odb9	augustus
+Xanthoria_parietina	Xanthoria parietina	Xanthoria	Teloschistaceae	Teloschistales	Lecanoromycetes	Pezizomycotina	high	3.0.2	dikarya_odb9	augustus

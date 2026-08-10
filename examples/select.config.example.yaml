@@ -1,0 +1,60 @@
+project:
+  name: dicarya_pilot
+  sequence_type: protein
+  random_seed: 20260729
+
+inputs:
+  busco_directory: dicarya_BUSCO
+  metadata: samples.tsv
+  sample_id_column: sample_ID
+  output: results_dicarya
+
+busco:
+  expected_version: "3.0.2"
+  expected_lineage: dikarya_odb9
+  sequence_source: single_copy_busco_sequences
+  duplicate_policy: exclude
+
+taxonomy:
+  balance_level: order
+  singleton_groups: report_separately
+
+alignment:
+  mafft_executable: mafft
+  strategy: auto
+  threads_per_gene: 2
+
+trimming:
+  enabled: true
+  trimal_executable: trimal
+  mode: automated1
+  retain_untrimmed: true
+
+eligibility:
+  min_taxa: 7
+  min_taxon_occupancy: 0.50
+  min_alignment_length: 100
+  min_informative_sites: 3
+  max_gap_fraction: 0.60
+  max_ambiguous_fraction: 0.10
+
+pca:
+  enabled: true
+  use_for_ranking: false
+
+panels:
+  sizes:
+    - 10
+    - 25
+    - 50
+    - 100
+  redundancy_penalty: 0.25
+  profiles:
+    - core_complete
+    - backbone_balanced
+    - deep_robust
+    - low_bias
+    - diverse_rate
+    - occupancy_only
+    - information_only
+    - random_matched

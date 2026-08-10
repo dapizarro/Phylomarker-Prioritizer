@@ -1,0 +1,9 @@
+profile	n_genes	stable	sensitive	extreme	unknown
+backbone_balanced	10	7	3	0	0
+core_complete	10	7	3	0	0
+deep_robust	10	9	1	0	0
+diverse_rate	10	5	5	0	0
+information_only	10	4	6	0	0
+low_bias	10	8	2	0	0
+occupancy_only	10	6	4	0	0
+random_matched	10	7	2	1	0

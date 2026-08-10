@@ -1,0 +1,61 @@
+# Etapa 1 — selección de paneles sobre el conjunto Dikarya (14 genomas).
+# Equivale al antiguo config.trimmed_v4.yaml.
+#
+# Los datos pesados viven fuera del repositorio (ver data/README.md).
+# Ajusta las rutas absolutas si mueves los datos.
+
+project:
+  name: dicarya_pilot
+  sequence_type: protein
+  random_seed: 20260729
+
+inputs:
+  busco_directory: /home/pizarro/Documentos/PROJECT_2026/Phylomarker_prioritizer/dicarya_BUSCO
+  metadata: /home/pizarro/git/Phylomarker-Prioritizer/data/samples.tsv
+  sample_id_column: sample_ID
+  output: /home/pizarro/Documentos/PROJECT_2026/Phylomarker_prioritizer/phylomarker-select/results_dicarya_trimmed_v4
+
+taxonomy:
+  balance_level: order
+
+alignment:
+  mafft_executable: mafft
+  strategy: auto
+  threads_per_gene: 2
+
+trimming:
+  enabled: true
+  trimal_executable: trimal
+  mode: automated1
+  retain_untrimmed: true
+
+eligibility:
+  min_taxa: 7
+  min_taxon_occupancy: 0.50
+  min_alignment_length: 100
+  min_informative_sites: 3
+  max_gap_fraction: 0.60
+  max_ambiguous_fraction: 0.10
+
+pca:
+  enabled: true
+  use_for_ranking: false
+
+panels:
+  sizes:
+    - 5
+    - 10
+  redundancy_penalty: 0.10
+  candidate_top_fraction: 0.10
+  candidate_minimum_pool_size: 50
+  maximum_score_drop: 0.20
+  diverse_rate_bins: 5
+  profiles:
+    - core_complete
+    - backbone_balanced
+    - deep_robust
+    - low_bias
+    - diverse_rate
+    - occupancy_only
+    - information_only
+    - random_matched
