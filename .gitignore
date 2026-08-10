@@ -9,6 +9,9 @@ dist/
 *.egg-info/
 .DS_Store
 
+# Ajustes locales de Claude Code (permisos por máquina); .claude/docs/ sí se versiona.
+.claude/settings.local.json
+
 # Datos pesados y resultados de ejecución: viven fuera del repositorio.
 # Ver data/README.md
 data/busco/
