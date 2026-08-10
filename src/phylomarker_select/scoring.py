@@ -4,6 +4,8 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
+from .config import EligibilityConfig
+
 
 def robust_standardize(
     series: pd.Series,
@@ -61,7 +63,7 @@ def percentile_score(
 
 def add_biological_scores(
     metrics: pd.DataFrame,
-    config: dict,
+    eligibility: EligibilityConfig,
 ) -> pd.DataFrame:
     scored = metrics.copy()
 
@@ -206,52 +208,12 @@ def add_biological_scores(
         else pd.Series(1.0, index=scored.index)
     )
 
-    eligibility = config.get(
-        "eligibility",
-        {},
-    )
-
-    minimum_taxa = int(
-        eligibility.get(
-            "min_taxa",
-            4,
-        )
-    )
-
-    minimum_occupancy = float(
-        eligibility.get(
-            "min_taxon_occupancy",
-            0.5,
-        )
-    )
-
-    minimum_length = int(
-        eligibility.get(
-            "min_alignment_length",
-            80,
-        )
-    )
-
-    minimum_pis = int(
-        eligibility.get(
-            "min_informative_sites",
-            2,
-        )
-    )
-
-    maximum_gaps = float(
-        eligibility.get(
-            "max_gap_fraction",
-            0.6,
-        )
-    )
-
-    maximum_ambiguous = float(
-        eligibility.get(
-            "max_ambiguous_fraction",
-            0.1,
-        )
-    )
+    minimum_taxa = eligibility.min_taxa
+    minimum_occupancy = eligibility.min_taxon_occupancy
+    minimum_length = eligibility.min_alignment_length
+    minimum_pis = eligibility.min_informative_sites
+    maximum_gaps = eligibility.max_gap_fraction
+    maximum_ambiguous = eligibility.max_ambiguous_fraction
 
     scored["eligible"] = (
         (scored["n_taxa"] >= minimum_taxa)

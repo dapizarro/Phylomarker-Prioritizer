@@ -3,6 +3,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from phylomarker_select.config import EligibilityConfig
 from phylomarker_select.fasta import (
     FastaRecord,
     first_fasta_record,
@@ -79,20 +80,18 @@ def test_eligibility() -> None:
         }
     )
 
-    config = {
-        "eligibility": {
-            "min_taxa": 4,
-            "min_taxon_occupancy": 0.5,
-            "min_alignment_length": 80,
-            "min_informative_sites": 2,
-            "max_gap_fraction": 0.6,
-            "max_ambiguous_fraction": 0.1,
-        }
-    }
+    eligibility = EligibilityConfig(
+        min_taxa=4,
+        min_taxon_occupancy=0.5,
+        min_alignment_length=80,
+        min_informative_sites=2,
+        max_gap_fraction=0.6,
+        max_ambiguous_fraction=0.1,
+    )
 
     scored = add_biological_scores(
         metrics,
-        config,
+        eligibility,
     )
 
     assert bool(scored.loc[0, "eligible"])
@@ -297,7 +296,7 @@ def test_clade_balance_uses_group_completeness() -> None:
             "trimming_stability_score": [1.0, 1.0],
         }
     )
-    scored = add_biological_scores(metrics, {"eligibility": {}})
+    scored = add_biological_scores(metrics, EligibilityConfig())
     balanced = scored.loc[scored["gene_id"] == "balanced", "clade_balance_score"].iloc[0]
     unbalanced = scored.loc[scored["gene_id"] == "unbalanced", "clade_balance_score"].iloc[0]
     assert balanced > unbalanced

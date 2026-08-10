@@ -4,9 +4,8 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-import yaml
-
 from .align import align_markers, trim_alignments
+from .config import SelectConfig
 from .busco import discover_busco_runs, extract_markers, validate_runs
 from .layout import OutputLayout
 from .metadata import load_metadata
@@ -20,101 +19,25 @@ from .scoring import add_biological_scores
 LOGGER = logging.getLogger("phylomarker-select")
 
 
-def load_yaml(path: Path) -> dict:
-    if not path.is_file():
-        raise FileNotFoundError(f"Configuration file not found: {path}")
-
-    with path.open(encoding="utf-8") as handle:
-        config = yaml.safe_load(handle)
-
-    if not isinstance(config, dict):
-        raise ValueError("The YAML configuration must contain a mapping.")
-
-    return config
-
-
 def run_pipeline(
     configuration_path: Path,
 ) -> None:
-    config = load_yaml(
+    config = SelectConfig.load(
         configuration_path
     )
 
-    project_config = config.get(
-        "project",
-        {},
-    )
-
-    input_config = config.get(
-        "inputs",
-        {},
-    )
-
-    alignment_config = config.get(
-        "alignment",
-        {},
-    )
-
-    trimming_config = config.get(
-        "trimming",
-        {},
-    )
-
-    taxonomy_config = config.get(
-        "taxonomy",
-        {},
-    )
-
-    busco_directory = Path(
-        input_config["busco_directory"]
-    )
-
-    metadata_path = Path(
-        input_config["metadata"]
-    )
-
-    output_directory = Path(
-        input_config.get(
-            "output",
-            "results",
-        )
-    )
-
-    sample_id_column = input_config.get(
-        "sample_id_column",
-        "sample_ID",
-    )
-
-    sequence_type = project_config.get(
-        "sequence_type",
-        "protein",
-    )
-
-    if sequence_type not in {
-        "protein",
-        "nucleotide",
-    }:
-        raise ValueError(
-            "sequence_type must be 'protein' or 'nucleotide'"
-        )
-
-    balance_level = taxonomy_config.get(
-        "balance_level",
-        "order",
-    )
+    busco_directory = config.inputs.busco_directory
+    metadata_path = config.inputs.metadata
+    output_directory = config.inputs.output
+    sample_id_column = config.inputs.sample_id_column
 
     layout = OutputLayout(
         root=output_directory,
-        sequence_type=sequence_type,
-        balance_level=balance_level,
+        sequence_type=config.project.sequence_type,
+        balance_level=config.taxonomy.balance_level,
     )
 
-    trimming_enabled = bool(
-        trimming_config.get(
-            "enabled",
-            True,
-        )
-    )
+    trimming_enabled = config.trimming.enabled
 
     output_directory.mkdir(
         parents=True,
@@ -123,7 +46,7 @@ def run_pipeline(
 
     write_provenance(
         layout,
-        config,
+        config.raw,
     )
 
     metadata = load_metadata(
@@ -182,33 +105,16 @@ def run_pipeline(
 
     align_markers(
         layout=layout,
-        mafft_executable=alignment_config.get(
-            "mafft_executable",
-            "mafft",
-        ),
-        threads=int(
-            alignment_config.get(
-                "threads_per_gene",
-                2,
-            )
-        ),
-        strategy=alignment_config.get(
-            "strategy",
-            "auto",
-        ),
+        mafft_executable=config.alignment.mafft_executable,
+        threads=config.alignment.threads_per_gene,
+        strategy=config.alignment.strategy,
     )
 
     if trimming_enabled:
         trim_alignments(
             layout=layout,
-            trimal_executable=trimming_config.get(
-                "trimal_executable",
-                "trimal",
-            ),
-            mode=trimming_config.get(
-                "mode",
-                "automated1",
-            ),
+            trimal_executable=config.trimming.trimal_executable,
+            mode=config.trimming.mode,
         )
 
     metrics = calculate_metrics(
@@ -220,7 +126,7 @@ def run_pipeline(
 
     scored = add_biological_scores(
         metrics,
-        config,
+        config.eligibility,
     )
 
     layout.rankings_directory.mkdir(
@@ -234,13 +140,7 @@ def run_pipeline(
         index=False,
     )
 
-    if config.get(
-        "pca",
-        {},
-    ).get(
-        "enabled",
-        True,
-    ):
+    if config.pca.enabled:
         run_exploratory_pca(
             scored,
             layout,
@@ -249,7 +149,8 @@ def run_pipeline(
     create_panels(
         scored=scored,
         layout=layout,
-        config=config,
+        panel_config=config.panels,
+        random_seed=config.project.random_seed,
         trimming_enabled=trimming_enabled,
     )
 
@@ -259,7 +160,7 @@ def run_pipeline(
         warnings=warnings,
         metrics=metrics,
         scored=scored,
-        config=config,
+        config=config.raw,
     )
 
     LOGGER.info(

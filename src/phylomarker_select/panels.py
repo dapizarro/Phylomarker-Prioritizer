@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 import yaml
 
+from .config import PanelsConfig
 from .layout import OutputLayout
 from .optimize import optimize_diverse_rate_panel, optimize_panel_greedily
 from .profiles import calculate_profile_ranking
@@ -216,7 +217,8 @@ def export_panel_alignments(
 def create_panels(
     scored: pd.DataFrame,
     layout: OutputLayout,
-    config: dict,
+    panel_config: PanelsConfig,
+    random_seed: int,
     trimming_enabled: bool,
 ) -> None:
     sequence_type = layout.sequence_type
@@ -225,59 +227,14 @@ def create_panels(
         trimming_enabled
     )
 
-    panel_config = config.get(
-        "panels",
-        {},
+    profiles = panel_config.profiles
+    sizes = panel_config.sizes
+    redundancy_penalty = panel_config.redundancy_penalty
+    candidate_top_fraction = panel_config.candidate_top_fraction
+    candidate_minimum_pool_size = (
+        panel_config.candidate_minimum_pool_size
     )
-
-    profiles = panel_config.get(
-        "profiles",
-        [
-            "core_complete",
-            "backbone_balanced",
-            "deep_robust",
-            "low_bias",
-            "diverse_rate",
-            "occupancy_only",
-            "information_only",
-            "random_matched",
-        ],
-    )
-
-    sizes = [
-        int(value)
-        for value in panel_config.get(
-            "sizes",
-            [25, 50, 100],
-        )
-    ]
-
-    redundancy_penalty = float(
-        panel_config.get(
-            "redundancy_penalty",
-            0.10,
-        )
-    )
-
-    candidate_top_fraction = float(
-        panel_config.get("candidate_top_fraction", 0.10)
-    )
-    candidate_minimum_pool_size = int(
-        panel_config.get("candidate_minimum_pool_size", 50)
-    )
-    maximum_score_drop = float(
-        panel_config.get("maximum_score_drop", 0.20)
-    )
-
-    random_seed = int(
-        config.get(
-            "project",
-            {},
-        ).get(
-            "random_seed",
-            20260729,
-        )
-    )
+    maximum_score_drop = panel_config.maximum_score_drop
 
     layout.panels_directory.mkdir(
         parents=True,
@@ -356,9 +313,7 @@ def create_panels(
                     candidate_top_fraction,
                     candidate_minimum_pool_size,
                     maximum_score_drop,
-                    number_rate_bins=int(
-                        panel_config.get("diverse_rate_bins", 5)
-                    ),
+                    number_rate_bins=panel_config.diverse_rate_bins,
                 )
             else:
                 panel, trace = optimize_panel_greedily(
