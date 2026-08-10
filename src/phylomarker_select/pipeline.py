@@ -5,8 +5,8 @@ import logging
 from pathlib import Path
 
 from .align import align_markers, trim_alignments
-from .config import SelectConfig
 from .busco import discover_busco_runs, extract_markers, validate_runs
+from .config import SelectConfig
 from .layout import OutputLayout
 from .metadata import load_metadata
 from .metrics.genes import calculate_metrics
