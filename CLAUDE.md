@@ -34,10 +34,10 @@ External tools: `mafft`, `trimal` (stage 1); `iqtree2`/`iqtree3`, `java`, an AST
 
 Deep implementation references — read the relevant one before non-trivial work on a stage:
 
-- **`.claude/docs/select.md`** — stage 1: the 11-step `run_pipeline` chain, every metric
-  family and its formula, the six biological dimensions and their internal weights,
-  `PROFILE_WEIGHTS` / `PROFILE_EXCLUDED_TRIMMING_CLASSES`, both greedy optimizers, the
-  eligibility gate, and the output tree.
+- **`.claude/docs/select.md`** — stage 1: the module map, the `run_pipeline` chain, every
+  metric family and its formula, the six biological dimensions and their internal weights,
+  the `PROFILES` registry, both greedy optimizers, the eligibility gate, the output tree,
+  and the MAFFT reproducibility limit.
 - **`.claude/docs/phylogeny.md`** — stage 2: the manifest-first contract, resumability via
   `command_expected_output`, the three partition strategies and model reuse, concatenation
   rules, DendroPy RF, deterministic jackknife, and the output tree.
@@ -48,11 +48,18 @@ The sections below are the summary; those two files are the detail.
 
 Stage 2's config field `inputs.selection_results` points at stage 1's `inputs.output` directory. `core.panel_genes()` and `core.alignment_path()` read that tree directly — specifically `panels/<profile>/n<size>/genes.txt` and the per-gene alignments. Changing stage 1's output layout breaks stage 2 silently.
 
-### `src/phylomarker_select/cli.py`
+### `src/phylomarker_select/`
 
-One ~3.500-line module. `run_pipeline()` is driven end to end by YAML; there is **no partial or resumable execution**. Stage order:
+21 modules (was one ~3.500-line `cli.py` until August 2026). `run_pipeline()` in `pipeline.py` is driven end to end by YAML; there is still **no partial or resumable execution**. Stage order:
 
 `discover_busco_runs` → `validate_runs` → `extract_markers` → `align_markers` (MAFFT) → `trim_alignments` (trimAl; both untrimmed and trimmed retained) → `calculate_metrics` (occupancy, PIS/variable sites, entropy, p-distance, gap/ambiguity, composition variability, trimming stability) → eligibility filter → `add_biological_scores` (median/MAD robust standardization over coverage, clade balance, alignment quality, information, rate fit, bias penalty) → `run_exploratory_pca` → `calculate_profile_ranking` → `optimize_panel_greedily` / `optimize_diverse_rate_panel` → `create_panels` → `create_html_report` → `write_provenance`.
+
+**Three modules own what used to be scattered. Extend there, not elsewhere:**
+- `config.py` — every YAML default, once, in typed frozen dataclasses. `SelectConfig.load()`. Keeps `.raw` for the provenance/HTML dump.
+- `layout.py` — every output path. `panel_genes_file()` and `trimmed_alignment()` are the stage-2 contract.
+- `profiles.py` — the `PROFILES` registry. Adding a profile is one entry. **Do not reorder a profile's `weights`**: ranking sums them in insertion order, so reordering perturbs float results and can flip ranking ties.
+
+If you find yourself writing a path literal or a `get(key, default)` outside those three, the change belongs somewhere else.
 
 Invariants encoded in the code and locked by tests — preserve them:
 - Panels are **not** top-N. Greedy marginal gain `Δ_g(P) = S_g − λ·max_{h∈P} similarity(g,h)`, restricted to a high-quality candidate pool (`candidate_top_fraction`, `candidate_minimum_pool_size`, `maximum_score_drop`).
@@ -60,6 +67,8 @@ Invariants encoded in the code and locked by tests — preserve them:
 - Eligibility is a hard gate applied *before* ranking.
 - `diverse_rate` bins by `mean_pairwise_distance` quantiles (`diverse_rate_bins: 5`) and fills bins evenly.
 - `occupancy_only`, `information_only`, `random_matched` are deliberate negative controls, not profiles to "improve".
+
+**The full pipeline is not reproducible.** MAFFT with `threads_per_gene: 2` is nondeterministic (`--thread 1` is not); measured on Dikarya, 378/1311 genes got a different alignment across two runs of identical code and config, changing 12 of 16 panels. To compare two versions of the code, reuse the alignments — `align_markers`/`trim_alignments` skip existing non-empty outputs, so copying `alignments/` into the new output directory is enough. See `.claude/docs/select.md` §10 bis.
 
 ### `src/phylomarker_phylogeny/`
 
@@ -79,7 +88,7 @@ Current Dikarya run state: stage 1 complete (`results_dicarya_trimmed_v4`); stag
 
 ## Code style
 
-`phylomarker_select/cli.py` uses a verbose vertical style (one argument per line, trailing commas, wide spacing). `phylomarker_phylogeny` uses a terse compact style (semicolons, single-line functions). Match the file you are editing; do not reformat across the boundary.
+`phylomarker_select` uses a verbose vertical style (one argument per line, trailing commas, wide spacing). `phylomarker_phylogeny` uses a terse compact style (semicolons, single-line functions). Match the file you are editing; do not reformat across the boundary.
 
 ## History
 
