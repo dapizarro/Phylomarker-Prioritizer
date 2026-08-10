@@ -12,7 +12,13 @@ import yaml
 from .config import PanelsConfig
 from .layout import OutputLayout
 from .optimize import optimize_diverse_rate_panel, optimize_panel_greedily
-from .profiles import calculate_profile_ranking
+from .profiles import (
+    DIVERSE_RATE,
+    GREEDY,
+    RANDOM,
+    calculate_profile_ranking,
+    get_profile,
+)
 
 LOGGER = logging.getLogger("phylomarker-select")
 
@@ -246,66 +252,32 @@ def create_panels(
         exist_ok=True,
     )
 
-    for profile in profiles:
-        if profile == "random_matched":
-            for size in sizes:
+    for profile_name in profiles:
+        profile = get_profile(profile_name)
+
+        ranked: pd.DataFrame | None = None
+
+        if profile.is_rankable:
+            ranked = calculate_profile_ranking(
+                scored,
+                profile_name,
+            )
+
+            ranked.to_csv(
+                layout.profile_ranking_table(profile_name),
+                sep="\t",
+                index=False,
+            )
+
+        for size in sizes:
+            if profile.optimizer == RANDOM:
                 panel = random_panel(
                     scored,
                     size,
                     random_seed + size,
                 )
-
-                layout.panel_directory(
-                    profile,
-                    size,
-                ).mkdir(
-                    parents=True,
-                    exist_ok=True,
-                )
-
-                panel.to_csv(
-                    layout.panel_genes_table(profile, size),
-                    sep="\t",
-                    index=False,
-                )
-
-                summarize_panel(panel).to_csv(
-                    layout.panel_summary_table(profile, size),
-                    sep="\t",
-                    index=False,
-                )
-
-                panel["gene_id"].to_csv(
-                    layout.panel_genes_file(profile, size),
-                    index=False,
-                    header=False,
-                )
-
-                export_panel_alignments(
-                    panel,
-                    alignment_directory,
-                    layout.panel_alignments_directory(
-                        profile,
-                        size,
-                    ),
-                    sequence_type,
-                )
-
-            continue
-
-        ranked = calculate_profile_ranking(
-            scored,
-            profile,
-        )
-
-        ranked.to_csv(
-            layout.profile_ranking_table(profile),
-            sep="\t",
-            index=False,
-        )
-
-        for size in sizes:
-            if profile == "diverse_rate":
+                trace = pd.DataFrame()
+            elif profile.optimizer == DIVERSE_RATE:
                 panel, trace = optimize_diverse_rate_panel(
                     ranked,
                     size,
@@ -315,7 +287,7 @@ def create_panels(
                     maximum_score_drop,
                     number_rate_bins=panel_config.diverse_rate_bins,
                 )
-            else:
+            elif profile.optimizer == GREEDY:
                 panel, trace = optimize_panel_greedily(
                     ranked,
                     size,
@@ -324,9 +296,14 @@ def create_panels(
                     candidate_minimum_pool_size,
                     maximum_score_drop,
                 )
+            else:
+                raise ValueError(
+                    f"Unknown optimizer for profile "
+                    f"{profile_name}: {profile.optimizer}"
+                )
 
             layout.panel_directory(
-                profile,
+                profile_name,
                 size,
             ).mkdir(
                 parents=True,
@@ -334,25 +311,29 @@ def create_panels(
             )
 
             panel.to_csv(
-                layout.panel_genes_table(profile, size),
+                layout.panel_genes_table(profile_name, size),
                 sep="\t",
                 index=False,
             )
 
             summarize_panel(panel).to_csv(
-                layout.panel_summary_table(profile, size),
+                layout.panel_summary_table(profile_name, size),
                 sep="\t",
                 index=False,
             )
 
-            trace.to_csv(
-                layout.selection_trace_table(profile, size),
-                sep="\t",
-                index=False,
-            )
+            if profile.writes_trace:
+                trace.to_csv(
+                    layout.selection_trace_table(
+                        profile_name,
+                        size,
+                    ),
+                    sep="\t",
+                    index=False,
+                )
 
             panel["gene_id"].to_csv(
-                layout.panel_genes_file(profile, size),
+                layout.panel_genes_file(profile_name, size),
                 index=False,
                 header=False,
             )
@@ -361,15 +342,18 @@ def create_panels(
                 panel,
                 alignment_directory,
                 layout.panel_alignments_directory(
-                    profile,
+                    profile_name,
                     size,
                 ),
                 sequence_type,
             )
 
+            if not profile.writes_trace:
+                continue
+
             manifest = {
                 "schema_version": "0.1",
-                "profile": profile,
+                "profile": profile_name,
                 "requested_size": size,
                 "actual_size": int(
                     len(panel)
@@ -385,7 +369,7 @@ def create_panels(
             }
 
             with layout.panel_manifest(
-                profile,
+                profile_name,
                 size,
             ).open(
                 "w",
