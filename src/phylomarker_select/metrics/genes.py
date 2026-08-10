@@ -1,28 +1,28 @@
 """Tabla de metricas por gen."""
 from __future__ import annotations
 
-from pathlib import Path
-
 import numpy as np
 import pandas as pd
 
 from ..constants import MISSING_CHARACTERS
+from ..layout import OutputLayout
 from .distance import composition_variability, mean_pairwise_p_distance
 from .sites import alignment_matrix, variable_sites_and_pis
 from .trimming import calculate_trimming_metrics
 
 
 def calculate_metrics(
-    alignment_directory: Path,
-    output_directory: Path,
+    layout: OutputLayout,
     metadata: pd.DataFrame,
     sample_id_column: str,
-    sequence_type: str,
-    balance_level: str,
-    raw_alignment_directory: Path | None = None,
     trimming_enabled: bool = False,
 ) -> pd.DataFrame:
-    extension = ".faa" if sequence_type == "protein" else ".fna"
+    balance_level = layout.balance_level
+    extension = layout.extension
+
+    alignment_directory = layout.analysis_alignment_directory(
+        trimming_enabled
+    )
 
     paths = sorted(
         list(
@@ -216,15 +216,8 @@ def calculate_metrics(
         trimming_metrics: dict[str, object]
 
         if trimming_enabled:
-            if raw_alignment_directory is None:
-                raise ValueError(
-                    "raw_alignment_directory is required when trimming "
-                    "is enabled"
-                )
-
-            raw_alignment_path = (
-                raw_alignment_directory
-                / f"{gene_id}.aln{extension}"
+            raw_alignment_path = layout.untrimmed_alignment(
+                gene_id
             )
 
             if not raw_alignment_path.is_file():
@@ -337,21 +330,19 @@ def calculate_metrics(
         keep="first",
     )
 
-    metrics_directory = output_directory / "metrics"
-    metrics_directory.mkdir(
+    layout.metrics_directory.mkdir(
         parents=True,
         exist_ok=True,
     )
 
     metrics.to_csv(
-        metrics_directory / "per_gene_metrics.tsv",
+        layout.per_gene_metrics_table,
         sep="\t",
         index=False,
     )
 
     pd.DataFrame(group_rows).to_csv(
-        metrics_directory
-        / f"per_gene_{balance_level}_occupancy.tsv",
+        layout.group_occupancy_table,
         sep="\t",
         index=False,
     )

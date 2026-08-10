@@ -9,6 +9,7 @@ import pandas as pd
 
 from .constants import VALID_NUCLEOTIDE, VALID_PROTEIN
 from .fasta import FastaRecord, first_fasta_record, write_fasta
+from .layout import OutputLayout
 from .utils import sha256_file
 
 LOGGER = logging.getLogger("phylomarker-select")
@@ -234,17 +235,12 @@ def validate_sequence(
 
 def extract_markers(
     validated_runs: pd.DataFrame,
-    output_directory: Path,
-    sequence_type: str,
+    layout: OutputLayout,
 ) -> pd.DataFrame:
-    extension = ".faa" if sequence_type == "protein" else ".fna"
+    sequence_type = layout.sequence_type
+    extension = layout.extension
 
-    sequence_output = (
-        output_directory
-        / "sequences"
-        / sequence_type
-        / "per_gene"
-    )
+    sequence_output = layout.per_gene_sequences_directory
 
     sequence_output.mkdir(parents=True, exist_ok=True)
 
@@ -304,12 +300,10 @@ def extract_markers(
 
     provenance = pd.DataFrame(provenance_rows)
 
-    validation_directory = output_directory / "validation"
-    validation_directory.mkdir(parents=True, exist_ok=True)
+    layout.validation_directory.mkdir(parents=True, exist_ok=True)
 
     provenance.to_csv(
-        validation_directory
-        / f"{sequence_type}_sequence_provenance.tsv",
+        layout.sequence_provenance_table,
         sep="\t",
         index=False,
     )

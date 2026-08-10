@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 import yaml
 
+from .layout import OutputLayout
 from .optimize import optimize_diverse_rate_panel, optimize_panel_greedily
 from .profiles import calculate_profile_ranking
 
@@ -214,11 +215,16 @@ def export_panel_alignments(
 
 def create_panels(
     scored: pd.DataFrame,
-    alignment_directory: Path,
-    output_directory: Path,
+    layout: OutputLayout,
     config: dict,
-    sequence_type: str,
+    trimming_enabled: bool,
 ) -> None:
+    sequence_type = layout.sequence_type
+
+    alignment_directory = layout.analysis_alignment_directory(
+        trimming_enabled
+    )
+
     panel_config = config.get(
         "panels",
         {},
@@ -273,20 +279,12 @@ def create_panels(
         )
     )
 
-    panels_directory = (
-        output_directory / "panels"
-    )
-
-    rankings_directory = (
-        output_directory / "rankings"
-    )
-
-    panels_directory.mkdir(
+    layout.panels_directory.mkdir(
         parents=True,
         exist_ok=True,
     )
 
-    rankings_directory.mkdir(
+    layout.rankings_directory.mkdir(
         parents=True,
         exist_ok=True,
     )
@@ -300,33 +298,28 @@ def create_panels(
                     random_seed + size,
                 )
 
-                panel_directory = (
-                    panels_directory
-                    / profile
-                    / f"n{size}"
-                )
-
-                panel_directory.mkdir(
+                layout.panel_directory(
+                    profile,
+                    size,
+                ).mkdir(
                     parents=True,
                     exist_ok=True,
                 )
 
                 panel.to_csv(
-                    panel_directory
-                    / "panel_genes.tsv",
+                    layout.panel_genes_table(profile, size),
                     sep="\t",
                     index=False,
                 )
 
                 summarize_panel(panel).to_csv(
-                    panel_directory / "panel_summary.tsv",
+                    layout.panel_summary_table(profile, size),
                     sep="\t",
                     index=False,
                 )
 
                 panel["gene_id"].to_csv(
-                    panel_directory
-                    / "genes.txt",
+                    layout.panel_genes_file(profile, size),
                     index=False,
                     header=False,
                 )
@@ -334,8 +327,10 @@ def create_panels(
                 export_panel_alignments(
                     panel,
                     alignment_directory,
-                    panel_directory
-                    / "alignments",
+                    layout.panel_alignments_directory(
+                        profile,
+                        size,
+                    ),
                     sequence_type,
                 )
 
@@ -347,8 +342,7 @@ def create_panels(
         )
 
         ranked.to_csv(
-            rankings_directory
-            / f"{profile}.tsv",
+            layout.profile_ranking_table(profile),
             sep="\t",
             index=False,
         )
@@ -376,40 +370,34 @@ def create_panels(
                     maximum_score_drop,
                 )
 
-            panel_directory = (
-                panels_directory
-                / profile
-                / f"n{size}"
-            )
-
-            panel_directory.mkdir(
+            layout.panel_directory(
+                profile,
+                size,
+            ).mkdir(
                 parents=True,
                 exist_ok=True,
             )
 
             panel.to_csv(
-                panel_directory
-                / "panel_genes.tsv",
+                layout.panel_genes_table(profile, size),
                 sep="\t",
                 index=False,
             )
 
             summarize_panel(panel).to_csv(
-                panel_directory / "panel_summary.tsv",
+                layout.panel_summary_table(profile, size),
                 sep="\t",
                 index=False,
             )
 
             trace.to_csv(
-                panel_directory
-                / "selection_trace.tsv",
+                layout.selection_trace_table(profile, size),
                 sep="\t",
                 index=False,
             )
 
             panel["gene_id"].to_csv(
-                panel_directory
-                / "genes.txt",
+                layout.panel_genes_file(profile, size),
                 index=False,
                 header=False,
             )
@@ -417,8 +405,10 @@ def create_panels(
             export_panel_alignments(
                 panel,
                 alignment_directory,
-                panel_directory
-                / "alignments",
+                layout.panel_alignments_directory(
+                    profile,
+                    size,
+                ),
                 sequence_type,
             )
 
@@ -439,8 +429,9 @@ def create_panels(
                 "ranking_uses_pca": False,
             }
 
-            with (
-                panel_directory / "panel.yaml"
+            with layout.panel_manifest(
+                profile,
+                size,
             ).open(
                 "w",
                 encoding="utf-8",

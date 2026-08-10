@@ -2,25 +2,22 @@
 from __future__ import annotations
 
 import html
-from pathlib import Path
 
 import pandas as pd
 import yaml
 
+from .layout import OutputLayout
+
 
 def create_html_report(
-    output_directory: Path,
+    layout: OutputLayout,
     runs: pd.DataFrame,
     warnings: pd.DataFrame,
     metrics: pd.DataFrame,
     scored: pd.DataFrame,
     config: dict,
 ) -> None:
-    report_directory = (
-        output_directory / "report"
-    )
-
-    report_directory.mkdir(
+    layout.report_directory.mkdir(
         parents=True,
         exist_ok=True,
     )
@@ -186,9 +183,7 @@ must be evaluated using independent phylogenetic analyses.
 </html>
 """
 
-    (
-        report_directory / "index.html"
-    ).write_text(
+    layout.report_index.write_text(
         report,
         encoding="utf-8",
     )

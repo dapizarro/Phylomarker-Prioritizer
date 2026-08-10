@@ -8,6 +8,7 @@ import yaml
 
 from .align import align_markers, trim_alignments
 from .busco import discover_busco_runs, extract_markers, validate_runs
+from .layout import OutputLayout
 from .metadata import load_metadata
 from .metrics.genes import calculate_metrics
 from .panels import create_panels
@@ -102,13 +103,26 @@ def run_pipeline(
         "order",
     )
 
+    layout = OutputLayout(
+        root=output_directory,
+        sequence_type=sequence_type,
+        balance_level=balance_level,
+    )
+
+    trimming_enabled = bool(
+        trimming_config.get(
+            "enabled",
+            True,
+        )
+    )
+
     output_directory.mkdir(
         parents=True,
         exist_ok=True,
     )
 
     write_provenance(
-        output_directory,
+        layout,
         config,
     )
 
@@ -127,32 +141,25 @@ def run_pipeline(
         sample_id_column,
     )
 
-    validation_directory = (
-        output_directory / "validation"
-    )
-
-    validation_directory.mkdir(
+    layout.validation_directory.mkdir(
         parents=True,
         exist_ok=True,
     )
 
     runs.to_csv(
-        validation_directory
-        / "discovered_runs.tsv",
+        layout.discovered_runs_table,
         sep="\t",
         index=False,
     )
 
     validated_runs.to_csv(
-        validation_directory
-        / "validated_runs.tsv",
+        layout.validated_runs_table,
         sep="\t",
         index=False,
     )
 
     warnings.to_csv(
-        validation_directory
-        / "warnings.tsv",
+        layout.warnings_table,
         sep="\t",
         index=False,
     )
@@ -170,27 +177,11 @@ def run_pipeline(
 
     extract_markers(
         validated_runs,
-        output_directory,
-        sequence_type,
-    )
-
-    extension = (
-        ".faa"
-        if sequence_type == "protein"
-        else ".fna"
-    )
-
-    per_gene_directory = (
-        output_directory
-        / "sequences"
-        / sequence_type
-        / "per_gene"
+        layout,
     )
 
     align_markers(
-        input_directory=per_gene_directory,
-        output_directory=output_directory,
-        sequence_type=sequence_type,
+        layout=layout,
         mafft_executable=alignment_config.get(
             "mafft_executable",
             "mafft",
@@ -207,25 +198,9 @@ def run_pipeline(
         ),
     )
 
-    untrimmed_directory = (
-        output_directory
-        / "alignments"
-        / sequence_type
-        / "untrimmed"
-    )
-
-    analysis_alignment_directory = (
-        untrimmed_directory
-    )
-
-    if trimming_config.get(
-        "enabled",
-        True,
-    ):
+    if trimming_enabled:
         trim_alignments(
-            input_directory=untrimmed_directory,
-            output_directory=output_directory,
-            sequence_type=sequence_type,
+            layout=layout,
             trimal_executable=trimming_config.get(
                 "trimal_executable",
                 "trimal",
@@ -236,24 +211,11 @@ def run_pipeline(
             ),
         )
 
-        analysis_alignment_directory = (
-            output_directory
-            / "alignments"
-            / sequence_type
-            / "trimmed"
-        )
-
     metrics = calculate_metrics(
-        alignment_directory=analysis_alignment_directory,
-        output_directory=output_directory,
+        layout=layout,
         metadata=metadata,
         sample_id_column=sample_id_column,
-        sequence_type=sequence_type,
-        balance_level=balance_level,
-        raw_alignment_directory=untrimmed_directory,
-        trimming_enabled=bool(
-            trimming_config.get("enabled", True)
-        ),
+        trimming_enabled=trimming_enabled,
     )
 
     scored = add_biological_scores(
@@ -261,18 +223,13 @@ def run_pipeline(
         config,
     )
 
-    ranking_directory = (
-        output_directory / "rankings"
-    )
-
-    ranking_directory.mkdir(
+    layout.rankings_directory.mkdir(
         parents=True,
         exist_ok=True,
     )
 
     scored.to_csv(
-        ranking_directory
-        / "all_gene_scores.tsv",
+        layout.all_gene_scores_table,
         sep="\t",
         index=False,
     )
@@ -286,19 +243,18 @@ def run_pipeline(
     ):
         run_exploratory_pca(
             scored,
-            output_directory,
+            layout,
         )
 
     create_panels(
         scored=scored,
-        alignment_directory=analysis_alignment_directory,
-        output_directory=output_directory,
+        layout=layout,
         config=config,
-        sequence_type=sequence_type,
+        trimming_enabled=trimming_enabled,
     )
 
     create_html_report(
-        output_directory=output_directory,
+        layout=layout,
         runs=validated_runs,
         warnings=warnings,
         metrics=metrics,
@@ -313,7 +269,5 @@ def run_pipeline(
 
     LOGGER.info(
         "HTML report: %s",
-        output_directory
-        / "report"
-        / "index.html",
+        layout.report_index,
     )

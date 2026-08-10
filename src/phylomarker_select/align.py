@@ -6,6 +6,8 @@ import shutil
 import subprocess
 from pathlib import Path
 
+from .layout import OutputLayout
+
 LOGGER = logging.getLogger("phylomarker-select")
 
 
@@ -42,30 +44,24 @@ def run_to_file(
 
 
 def align_markers(
-    input_directory: Path,
-    output_directory: Path,
-    sequence_type: str,
+    layout: OutputLayout,
     mafft_executable: str,
     threads: int,
     strategy: str,
 ) -> None:
-    extension = ".faa" if sequence_type == "protein" else ".fna"
+    extension = layout.extension
 
-    aligned_directory = (
-        output_directory
-        / "alignments"
-        / sequence_type
-        / "untrimmed"
-    )
+    input_directory = layout.per_gene_sequences_directory
+
+    aligned_directory = layout.untrimmed_directory
 
     aligned_directory.mkdir(parents=True, exist_ok=True)
 
     mafft = require_executable(mafft_executable)
 
     for input_path in sorted(input_directory.glob(f"*{extension}")):
-        output_path = (
-            aligned_directory
-            / f"{input_path.stem}.aln{extension}"
+        output_path = layout.untrimmed_alignment(
+            input_path.stem
         )
 
         if output_path.is_file() and output_path.stat().st_size > 0:
@@ -102,20 +98,15 @@ def align_markers(
 
 
 def trim_alignments(
-    input_directory: Path,
-    output_directory: Path,
-    sequence_type: str,
+    layout: OutputLayout,
     trimal_executable: str,
     mode: str,
 ) -> None:
-    extension = ".faa" if sequence_type == "protein" else ".fna"
+    extension = layout.extension
 
-    trimmed_directory = (
-        output_directory
-        / "alignments"
-        / sequence_type
-        / "trimmed"
-    )
+    input_directory = layout.untrimmed_directory
+
+    trimmed_directory = layout.trimmed_directory
 
     trimmed_directory.mkdir(parents=True, exist_ok=True)
 
@@ -128,10 +119,7 @@ def trim_alignments(
             f".aln{extension}"
         )
 
-        output_path = (
-            trimmed_directory
-            / f"{gene_id}.trimmed{extension}"
-        )
+        output_path = layout.trimmed_alignment(gene_id)
 
         if output_path.is_file() and output_path.stat().st_size > 0:
             continue

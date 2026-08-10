@@ -23,6 +23,13 @@ def configure_logging(verbose: bool) -> None:
 def validate_command(
     args: argparse.Namespace,
 ) -> None:
+    """Validacion suelta de entradas, sin ejecutar el flujo.
+
+    Escribe los tres TSV directamente bajo `--output`, en plano. El flujo
+    completo los deja bajo `<salida>/validation/` (ver `OutputLayout`). Son
+    dos convenciones distintas con los mismos nombres de fichero, a
+    proposito: no unificar sin decidir cual gana.
+    """
     metadata = load_metadata(
         Path(args.metadata),
         args.sample_id_column,

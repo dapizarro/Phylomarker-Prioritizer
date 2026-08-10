@@ -2,22 +2,19 @@
 from __future__ import annotations
 
 import sys
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import yaml
 
+from .layout import OutputLayout
+
 
 def write_provenance(
-    output_directory: Path,
+    layout: OutputLayout,
     config: dict,
 ) -> None:
-    provenance_directory = (
-        output_directory / "provenance"
-    )
-
-    provenance_directory.mkdir(
+    layout.provenance_directory.mkdir(
         parents=True,
         exist_ok=True,
     )
@@ -41,16 +38,12 @@ def write_provenance(
     ]
 
     pd.DataFrame(versions).to_csv(
-        provenance_directory
-        / "software_versions.tsv",
+        layout.software_versions_table,
         sep="\t",
         index=False,
     )
 
-    with (
-        provenance_directory
-        / "resolved_config.yaml"
-    ).open(
+    with layout.resolved_config_file.open(
         "w",
         encoding="utf-8",
     ) as handle:

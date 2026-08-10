@@ -2,20 +2,20 @@
 from __future__ import annotations
 
 import logging
-from pathlib import Path
-
 import numpy as np
 import pandas as pd
 from sklearn.decomposition import PCA
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import RobustScaler
 
+from .layout import OutputLayout
+
 LOGGER = logging.getLogger("phylomarker-select")
 
 
 def run_exploratory_pca(
     scored: pd.DataFrame,
-    output_directory: Path,
+    layout: OutputLayout,
 ) -> None:
     features = [
         "taxon_occupancy",
@@ -103,8 +103,7 @@ def run_exploratory_pca(
                 component_index,
             ] *= -1
 
-    pca_directory = output_directory / "pca"
-    pca_directory.mkdir(
+    layout.pca_directory.mkdir(
         parents=True,
         exist_ok=True,
     )
@@ -126,7 +125,7 @@ def run_exploratory_pca(
     )
 
     score_frame.to_csv(
-        pca_directory / "pca_scores.tsv",
+        layout.pca_scores_table,
         sep="\t",
         index=False,
     )
@@ -145,7 +144,7 @@ def run_exploratory_pca(
     loading_frame.index.name = "metric"
 
     loading_frame.to_csv(
-        pca_directory / "pca_loadings.tsv",
+        layout.pca_loadings_table,
         sep="\t",
     )
 
@@ -169,8 +168,7 @@ def run_exploratory_pca(
     )
 
     variance_frame.to_csv(
-        pca_directory
-        / "pca_explained_variance.tsv",
+        layout.pca_explained_variance_table,
         sep="\t",
         index=False,
     )
