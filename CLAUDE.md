@@ -32,6 +32,18 @@ External tools: `mafft`, `trimal` (stage 1); `iqtree2`/`iqtree3`, `java`, an AST
 
 ## Architecture
 
+Deep implementation references — read the relevant one before non-trivial work on a stage:
+
+- **`.claude/docs/select.md`** — stage 1: the 11-step `run_pipeline` chain, every metric
+  family and its formula, the six biological dimensions and their internal weights,
+  `PROFILE_WEIGHTS` / `PROFILE_EXCLUDED_TRIMMING_CLASSES`, both greedy optimizers, the
+  eligibility gate, and the output tree.
+- **`.claude/docs/phylogeny.md`** — stage 2: the manifest-first contract, resumability via
+  `command_expected_output`, the three partition strategies and model reuse, concatenation
+  rules, DendroPy RF, deterministic jackknife, and the output tree.
+
+The sections below are the summary; those two files are the detail.
+
 ### The coupling between stages
 
 Stage 2's config field `inputs.selection_results` points at stage 1's `inputs.output` directory. `core.panel_genes()` and `core.alignment_path()` read that tree directly — specifically `panels/<profile>/n<size>/genes.txt` and the per-gene alignments. Changing stage 1's output layout breaks stage 2 silently.
