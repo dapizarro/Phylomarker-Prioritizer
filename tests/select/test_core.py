@@ -3,21 +3,24 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from phylomarker_select.cli import (
+from phylomarker_select.fasta import (
     FastaRecord,
-    add_biological_scores,
-    calculate_profile_ranking,
+    first_fasta_record,
+    read_fasta,
+    write_fasta,
+)
+from phylomarker_select.metrics.sites import variable_sites_and_pis
+from phylomarker_select.metrics.trimming import (
     calculate_trimming_metrics,
     calculate_trimming_stability_score,
     classify_trimming,
-    first_fasta_record,
+)
+from phylomarker_select.optimize import (
     optimize_diverse_rate_panel,
     optimize_panel_greedily,
-    percentile_score,
-    read_fasta,
-    variable_sites_and_pis,
-    write_fasta,
 )
+from phylomarker_select.profiles import calculate_profile_ranking
+from phylomarker_select.scoring import add_biological_scores, percentile_score
 
 
 def test_fasta_roundtrip(tmp_path: Path) -> None:
