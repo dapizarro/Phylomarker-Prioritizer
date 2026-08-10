@@ -47,6 +47,8 @@ def run_pipeline(
     write_provenance(
         layout,
         config.raw,
+        mafft_executable=config.alignment.mafft_executable,
+        trimal_executable=config.trimming.trimal_executable,
     )
 
     metadata = load_metadata(

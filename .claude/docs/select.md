@@ -330,65 +330,59 @@ aborta la etapa 2.
 
 ---
 
-## 10 bis. El flujo completo no es reproducible: MAFFT
+## 10 bis. Reproducibilidad
 
-`alignment.threads_per_gene: 2` hace que **MAFFT no sea determinista**. Medido
-sobre este repositorio en agosto de 2026, con MAFFT v7.526 y `--auto`:
+El flujo tenía **dos fuentes independientes de no-determinismo**. Ambas se
+corrigieron en agosto de 2026; esta sección queda como aviso de por qué las
+cosas están como están.
 
-| `--thread` | Tres ejecuciones sobre la misma entrada |
+### MAFFT y el número de hilos
+
+MAFFT v7.526 con `--auto` solo es determinista con un hilo. Medido sobre 25
+genes, dos ejecuciones cada uno:
+
+| `--thread` | Reproducibles |
 |---|---|
-| 1 | idénticas |
-| 2 | divergen |
+| 1 | 25 / 25 |
+| 2 | 12 / 25 |
 | 4 | divergen |
 
-Consecuencia medida sobre el conjunto Dikarya: **378 de 1.311 genes (29 %)**
-recibieron un alineamiento distinto entre dos corridas del *mismo* código con la
-*misma* configuración. Eso se propaga a las métricas, al ranking y a la
-composición de los paneles: de 16 paneles comparados, 12 cambiaron de contenido.
+Consecuencia antes del arreglo: **378 de 1.311 genes (29 %)** recibieron un
+alineamiento distinto entre dos corridas del *mismo* código con la *misma*
+configuración, y eso cambió el contenido de 12 de 16 paneles.
 
-Implicaciones prácticas:
+Por eso `configs/select.dikarya.yaml` fija **`threads_per_gene: 1`**. Subirlo
+acelera el alineamiento y **rompe la reproducibilidad**; si alguien lo sube,
+que sea a sabiendas.
 
-- Dos corridas del pipeline **no** producen los mismos paneles. Los resultados
-  publicados de una corrida concreta no se reproducen volviendo a ejecutar.
-- Para comparar dos versiones del código hay que **reutilizar los alineamientos**:
-  `align_markers` y `trim_alignments` saltan las salidas existentes no vacías, así
-  que basta con copiar `alignments/` al nuevo directorio de salida.
-- `threads_per_gene: 1` da reproducibilidad a costa de tiempo de alineamiento.
+Para comparar dos versiones del código sin pagar el coste del realineamiento,
+**reutiliza los alineamientos**: `align_markers` y `trim_alignments` saltan las
+salidas existentes no vacías, así que basta con copiar `alignments/` al nuevo
+directorio de salida.
 
-`provenance/software_versions.tsv` registra las versiones de Python, numpy y
-pandas, pero **no las de MAFFT ni trimAl**, que son las que determinan los
-alineamientos. Es un hueco de procedencia pendiente.
-
-### Segunda fuente, independiente: iteración sobre `set`
+### Iteración sobre `set` en las métricas de grupo
 
 En `calculate_metrics`, los miembros de cada grupo taxonómico se recogen en un
-`set`:
+`set`. Python aleatoriza el hash de las cadenas por proceso, así que iterarlo
+directamente hacía que `np.mean` sumara en orden distinto en cada corrida. Las
+cinco columnas de grupo bailaban **1 ULP** (~4·10⁻¹⁶ relativo): dos corridas del
+código idéntico difirieron en 462 celdas.
 
-```python
-members = set(group[sample_id_column])
-...
-for member in members:
-    member_completeness.append(...)
-group_sequence_completeness = float(np.mean(member_completeness))
-```
+No llegaba a cambiar la composición de los paneles, pero ensuciaba
+`rankings/*.tsv` y `metrics/per_gene_metrics.tsv` e impedía compararlos byte a
+byte.
 
-Python aleatoriza el hash de las cadenas por proceso, así que el orden de
-iteración cambia entre corridas y `np.mean` suma en orden distinto. Resultado:
-las cinco columnas de grupo (`mean_group_sequence_completeness`,
-`min_group_sequence_completeness`,
-`min_replicated_group_sequence_completeness`, `sd_group_sequence_completeness`,
-`worst_group_gap_fraction`) varían en **1 ULP** (~4·10⁻¹⁶ relativo) entre
-corridas del mismo código con los mismos alineamientos.
+El arreglo es `for member in sorted(members)`, conservando el `set` para que
+`taxon in members` siga siendo O(1). **No mantengas ese bucle sobre el set sin
+ordenar.**
 
-Medido: dos corridas del código idéntico difirieron en 462 celdas de esas cinco
-columnas. **No se propaga a la composición de los paneles** — los 16 paneles
-salieron idénticos —, pero sí ensucia `rankings/*.tsv` y
-`metrics/per_gene_metrics.tsv`, lo que impide compararlos byte a byte entre
-corridas.
+### Procedencia
 
-Arreglo pendiente y trivial: iterar en orden determinista (`sorted(members)`).
-Cambia los últimos bits de esas cinco columnas respecto a cualquier resultado ya
-publicado, así que es una decisión consciente, no un cambio silencioso.
+`provenance/software_versions.tsv` registra Python, numpy, pandas **y ahora
+también MAFFT y trimAl**, que son las que de verdad determinan los
+alineamientos. `utils.executable_version()` nunca lanza: la procedencia se
+escribe antes de comprobar que las herramientas existan, y un fallo ahí no debe
+adelantarse al mensaje claro de `require_executable`.
 
 ---
 

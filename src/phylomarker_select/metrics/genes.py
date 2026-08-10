@@ -135,7 +135,12 @@ def calculate_metrics(
                 member_completeness: list[float] = []
                 member_gap_fractions: list[float] = []
 
-                for member in members:
+                #  Orden fijo: `members` es un set y Python aleatoriza el hash
+                #  de las cadenas por proceso, asi que iterarlo directamente
+                #  hacia que np.mean sumara en orden distinto en cada corrida
+                #  y las columnas de grupo bailaran 1 ULP. El set se conserva
+                #  para que `taxon in members` siga siendo O(1).
+                for member in sorted(members):
                     if member not in taxon_to_index:
                         member_completeness.append(0.0)
                         member_gap_fractions.append(1.0)

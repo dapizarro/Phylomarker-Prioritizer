@@ -8,11 +8,14 @@ import pandas as pd
 import yaml
 
 from .layout import OutputLayout
+from .utils import executable_version
 
 
 def write_provenance(
     layout: OutputLayout,
     config: dict,
+    mafft_executable: str = "mafft",
+    trimal_executable: str = "trimal",
 ) -> None:
     layout.provenance_directory.mkdir(
         parents=True,
@@ -34,6 +37,21 @@ def write_provenance(
         {
             "software": "pandas",
             "version": pd.__version__,
+        },
+        #  MAFFT y trimAl determinan los alineamientos, y por tanto todo lo
+        #  que se calcula despues. Sin su version la procedencia no permite
+        #  interpretar una corrida.
+        {
+            "software": "mafft",
+            "version": executable_version(
+                mafft_executable,
+            ),
+        },
+        {
+            "software": "trimal",
+            "version": executable_version(
+                trimal_executable,
+            ),
         },
     ]
 

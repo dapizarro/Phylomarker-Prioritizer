@@ -68,7 +68,11 @@ Invariants encoded in the code and locked by tests — preserve them:
 - `diverse_rate` bins by `mean_pairwise_distance` quantiles (`diverse_rate_bins: 5`) and fills bins evenly.
 - `occupancy_only`, `information_only`, `random_matched` are deliberate negative controls, not profiles to "improve".
 
-**The full pipeline is not reproducible.** MAFFT with `threads_per_gene: 2` is nondeterministic (`--thread 1` is not); measured on Dikarya, 378/1311 genes got a different alignment across two runs of identical code and config, changing 12 of 16 panels. To compare two versions of the code, reuse the alignments — `align_markers`/`trim_alignments` skip existing non-empty outputs, so copying `alignments/` into the new output directory is enough. See `.claude/docs/select.md` §10 bis.
+**Reproducibility is load-bearing and was hard-won.** Two independent nondeterminisms were fixed in August 2026; don't reintroduce either:
+- `configs/select.dikarya.yaml` pins `threads_per_gene: 1` because MAFFT `--auto` is only deterministic single-threaded (25/25 reproducible at 1 thread, 12/25 at 2). Before the fix, 378/1311 genes aligned differently across runs of identical code, changing 12 of 16 panels.
+- `calculate_metrics` iterates `sorted(members)`, not the raw `set` — Python randomizes string hashes per process, so `np.mean` summed in a different order each run and the five group columns drifted by 1 ULP (462 cells across two runs of the same code).
+
+To compare two versions of the code cheaply, reuse the alignments: `align_markers`/`trim_alignments` skip existing non-empty outputs, so copying `alignments/` into the new output directory skips MAFFT entirely. See `.claude/docs/select.md` §10 bis.
 
 ### `src/phylomarker_phylogeny/`
 

@@ -21,7 +21,11 @@ taxonomy:
 alignment:
   mafft_executable: mafft
   strategy: auto
-  threads_per_gene: 2
+  # 1, no 2: MAFFT solo es determinista con un hilo. Con 2 o 4, dos corridas
+  # del mismo codigo y la misma configuracion alinean distinto ~29% de los
+  # genes, lo que cambia la composicion de los paneles. Ver
+  # .claude/docs/select.md, seccion 10 bis.
+  threads_per_gene: 1
 
 trimming:
   enabled: true
