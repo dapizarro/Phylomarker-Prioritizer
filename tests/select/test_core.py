@@ -3,21 +3,25 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from phylomarker_select.cli import (
+from phylomarker_select.config import EligibilityConfig
+from phylomarker_select.fasta import (
     FastaRecord,
-    add_biological_scores,
-    calculate_profile_ranking,
+    first_fasta_record,
+    read_fasta,
+    write_fasta,
+)
+from phylomarker_select.metrics.sites import variable_sites_and_pis
+from phylomarker_select.metrics.trimming import (
     calculate_trimming_metrics,
     calculate_trimming_stability_score,
     classify_trimming,
-    first_fasta_record,
+)
+from phylomarker_select.optimize import (
     optimize_diverse_rate_panel,
     optimize_panel_greedily,
-    percentile_score,
-    read_fasta,
-    variable_sites_and_pis,
-    write_fasta,
 )
+from phylomarker_select.profiles import calculate_profile_ranking
+from phylomarker_select.scoring import add_biological_scores, percentile_score
 
 
 def test_fasta_roundtrip(tmp_path: Path) -> None:
@@ -76,20 +80,18 @@ def test_eligibility() -> None:
         }
     )
 
-    config = {
-        "eligibility": {
-            "min_taxa": 4,
-            "min_taxon_occupancy": 0.5,
-            "min_alignment_length": 80,
-            "min_informative_sites": 2,
-            "max_gap_fraction": 0.6,
-            "max_ambiguous_fraction": 0.1,
-        }
-    }
+    eligibility = EligibilityConfig(
+        min_taxa=4,
+        min_taxon_occupancy=0.5,
+        min_alignment_length=80,
+        min_informative_sites=2,
+        max_gap_fraction=0.6,
+        max_ambiguous_fraction=0.1,
+    )
 
     scored = add_biological_scores(
         metrics,
-        config,
+        eligibility,
     )
 
     assert bool(scored.loc[0, "eligible"])
@@ -294,7 +296,7 @@ def test_clade_balance_uses_group_completeness() -> None:
             "trimming_stability_score": [1.0, 1.0],
         }
     )
-    scored = add_biological_scores(metrics, {"eligibility": {}})
+    scored = add_biological_scores(metrics, EligibilityConfig())
     balanced = scored.loc[scored["gene_id"] == "balanced", "clade_balance_score"].iloc[0]
     unbalanced = scored.loc[scored["gene_id"] == "unbalanced", "clade_balance_score"].iloc[0]
     assert balanced > unbalanced
