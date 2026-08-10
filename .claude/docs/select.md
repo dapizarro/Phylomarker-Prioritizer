@@ -359,6 +359,37 @@ Implicaciones prácticas:
 pandas, pero **no las de MAFFT ni trimAl**, que son las que determinan los
 alineamientos. Es un hueco de procedencia pendiente.
 
+### Segunda fuente, independiente: iteración sobre `set`
+
+En `calculate_metrics`, los miembros de cada grupo taxonómico se recogen en un
+`set`:
+
+```python
+members = set(group[sample_id_column])
+...
+for member in members:
+    member_completeness.append(...)
+group_sequence_completeness = float(np.mean(member_completeness))
+```
+
+Python aleatoriza el hash de las cadenas por proceso, así que el orden de
+iteración cambia entre corridas y `np.mean` suma en orden distinto. Resultado:
+las cinco columnas de grupo (`mean_group_sequence_completeness`,
+`min_group_sequence_completeness`,
+`min_replicated_group_sequence_completeness`, `sd_group_sequence_completeness`,
+`worst_group_gap_fraction`) varían en **1 ULP** (~4·10⁻¹⁶ relativo) entre
+corridas del mismo código con los mismos alineamientos.
+
+Medido: dos corridas del código idéntico difirieron en 462 celdas de esas cinco
+columnas. **No se propaga a la composición de los paneles** — los 16 paneles
+salieron idénticos —, pero sí ensucia `rankings/*.tsv` y
+`metrics/per_gene_metrics.tsv`, lo que impide compararlos byte a byte entre
+corridas.
+
+Arreglo pendiente y trivial: iterar en orden determinista (`sorted(members)`).
+Cambia los últimos bits de esas cinco columnas respecto a cualquier resultado ya
+publicado, así que es una decisión consciente, no un cambio silencioso.
+
 ---
 
 ## 11. Trampas
